@@ -412,6 +412,11 @@ async function compartirLink() {
 }
 
 cargarSelectores();
+
+// Si el link trae #panel, abrir el panel de instructor directamente
+if (location.hash === "#panel") {
+  mostrarPanel();
+}
 </script>
 </body>
 </html>
