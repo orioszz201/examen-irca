@@ -1,0 +1,25 @@
+{
+  "name": "examen_app",
+  "version": "1.0.0",
+  "description": "App web para aplicar los exámenes de conocimiento (Etapa 1 · Refrigeración y Etapa 2 · Aire Acondicionado).",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/orioszz201/examen-irca.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/orioszz201/examen-irca/issues"
+  },
+  "homepage": "https://github.com/orioszz201/examen-irca#readme",
+  "dependencies": {
+    "@capacitor/android": "^8.6.2",
+    "@capacitor/cli": "^8.6.2",
+    "@capacitor/core": "^8.6.2"
+  }
+}

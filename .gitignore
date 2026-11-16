@@ -1,2 +1,7 @@
 supabase.sql
 supabase_sql.md
+agregar_borrar.md
+node_modules/
+www/
+android/
+*.apk
