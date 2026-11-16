@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Examen de Conocimientos — IRCA</title>
+<style>
+  :root {
+    --primary: #065A82;
+    --secondary: #1C7293;
+    --accent: #21295C;
+    --light: #EAF3F7;
+    --ok: #1a7f37;
+    --bad: #b42318;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Calibri", "Segoe UI", Arial, sans-serif;
+    background: #f4f7f9; color: #1c2733; line-height: 1.45;
+    padding-bottom: 60px;
+  }
+  header {
+    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    color: #fff; padding: 14px 16px; text-align: center;
+  }
+  header h1 { font-size: 1.15rem; font-weight: 700; }
+  header .sub { font-size: .82rem; opacity: .92; margin-top: 3px; }
+  .wrap { max-width: 820px; margin: 0 auto; padding: 16px; }
+  .card {
+    background: #fff; border-radius: 12px; padding: 20px;
+    box-shadow: 0 1px 4px rgba(6,90,130,.12); margin-bottom: 16px;
+  }
+  .card h2 { color: var(--primary); font-size: 1.05rem; margin-bottom: 14px; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-weight: 600; font-size: .9rem; margin-bottom: 5px; }
+  input[type=text], select, textarea {
+    width: 100%; padding: 10px 12px; border: 1px solid #c7d6de; border-radius: 8px;
+    font-size: .95rem; font-family: inherit;
+  }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--secondary); border-color: transparent; }
+  .btn {
+    display: inline-block; background: var(--primary); color: #fff; border: none;
+    padding: 11px 18px; border-radius: 8px; font-size: .95rem; font-weight: 600;
+    cursor: pointer; text-decoration: none;
+  }
+  .btn:hover { background: var(--secondary); }
+  .btn.ghost { background: #fff; color: var(--primary); border: 1.5px solid var(--primary); }
+  .btn.block { width: 100%; }
+  .btnrow { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+  .q { margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #e6edf1; }
+  .q .txt { font-weight: 600; margin-bottom: 8px; }
+  .q label.opt {
+    display: flex; gap: 10px; align-items: flex-start; padding: 8px 10px;
+    border-radius: 8px; cursor: pointer; margin-bottom: 4px;
+  }
+  .q label.opt:hover { background: var(--light); }
+  .q input[type=radio] { margin-top: 3px; }
+  .q .letter { font-weight: 700; color: var(--secondary); min-width: 18px; }
+  .score { text-align: center; padding: 30px 10px; }
+  .score .nota { font-size: 2.6rem; font-weight: 800; color: var(--primary); }
+  .score .de { font-size: 1rem; color: #667; }
+  .score .aprobado { color: var(--ok); font-weight: 700; margin-top: 8px; }
+  .score .reprobado { color: var(--bad); font-weight: 700; margin-top: 8px; }
+  table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+  th, td { padding: 9px 8px; text-align: left; border-bottom: 1px solid #e6edf1; }
+  th { background: var(--light); color: var(--primary); font-weight: 700; }
+  .toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .hidden { display: none; }
+  .muted { color: #667; font-size: .82rem; }
+  footer {
+    position: fixed; bottom: 0; left: 0; right: 0; background: var(--accent); color: #dfe6f0;
+    text-align: center; font-size: .72rem; padding: 8px;
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>INSTITUTO REGIONAL DE CAPACITACIÓN Y ADMINISTRACIÓN I.R.C.A.</h1>
+  <div class="sub">Examen de Conocimientos — Aire Acondicionado · “Te capacitamos para trabajar”</div>
+</header>
+
+<div class="wrap">
+
+  <!-- INICIO -->
+  <div id="vista-inicio" class="card">
+    <h2>Elegí el examen y tu nombre</h2>
+    <div class="field">
+      <label>Examen</label>
+      <select id="sel-examen"></select>
+    </div>
+    <div class="field">
+      <label>Nombre y apellidos</label>
+      <input type="text" id="inp-nombre" placeholder="Escribí tu nombre completo">
+    </div>
+    <button class="btn block" onclick="iniciarExamen()">Empezar examen</button>
+    <div class="btnrow">
+      <button class="btn ghost" onclick="mostrarPanel()">Ver panel (instructor)</button>
+    </div>
+  </div>
+
+  <!-- EXAMEN -->
+  <div id="vista-examen" class="card hidden">
+    <h2 id="titulo-examen"></h2>
+    <p class="muted">Alumno: <strong id="nombre-actual"></strong></p>
+    <div id="preguntas"></div>
+    <button class="btn block" id="btn-calificar" onclick="calificar()">Guardar y calificar</button>
+  </div>
+
+  <!-- RESULTADO -->
+  <div id="vista-resultado" class="card hidden">
+    <div class="score">
+      <div>Tu nota</div>
+      <div class="nota"><span id="res-nota"></span>/<span id="res-total"></span></div>
+      <div class="de" id="res-pct"></div>
+      <div id="res-estado"></div>
+    </div>
+    <button class="btn block" onclick="volverInicio()">Terminar</button>
+  </div>
+
+  <!-- PANEL -->
+  <div id="vista-panel" class="card hidden">
+    <h2>Panel de resultados (instructor)</h2>
+    <div class="toolbar">
+      <button class="btn" onclick="exportarJSON()">Exportar JSON</button>
+      <button class="btn ghost" onclick="window.print()">Imprimir / PDF</button>
+      <button class="btn ghost" onclick="mostrarPanel()">Actualizar</button>
+    </div>
+    <div id="tabla-panel"></div>
+    <div class="btnrow"><button class="btn ghost" onclick="volverInicio()">← Volver</button></div>
+  </div>
+
+</div>
+
+<footer>IRCAPRO S.A. de C.V. — San Miguel · Usulután · Zacatecoluca · Santa Rosa de Lima · Ahuachapán · Santa Ana · Sonsonate · San Salvador</footer>
+
+<script>
+// ===================== SUPABASE =====================
+const SUPABASE_URL = "https://ahcblxfjshrvukhfrteq.supabase.co";
+const SUPABASE_KEY = "sb_publishable_mNCgIg37tfX7hBbudsWdKw_xQ87xkGG";
+
+async function calificarRPC(nombre, examen, respuestas, abierta) {
+  const res = await fetch(SUPABASE_URL + "/rest/v1/rpc/calificar", {
+    method: "POST",
+    headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY, "Content-Type": "application/json" },
+    body: JSON.stringify({ p_nombre: nombre, p_examen: examen, p_respuestas: respuestas, p_abierta: abierta })
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+async function fetchResultados() {
+  const res = await fetch(SUPABASE_URL + "/rest/v1/resultados?select=*&order=creado_en.desc", {
+    headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY }
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+// ===================== DATOS DEL EXAMEN =====================
+const EXAMENES = {
+  "etapa1": {
+    titulo: "Etapa 1 · Refrigeración",
+    preguntas: [
+      { q: "El orden correcto de circulación del refrigerante en un ciclo de refrigeración es:",
+        opciones: ["Compresor → Condensador → Capilar → Evaporador", "Compresor → Evaporador → Condensador → Capilar", "Condensador → Compresor → Evaporador → Capilar", "Evaporador → Capilar → Compresor → Condensador"] },
+      { q: "El elemento del sistema de refrigeración encargado de cambiar el refrigerante de fase de vapor a fase líquida, manteniendo la misma presión, es:",
+        opciones: ["El dispositivo de expansión", "El evaporador", "El condensador", "El compresor"] },
+      { q: "El evaporador de un sistema de refrigeración cumple la función de:",
+        opciones: ["Rechazar el calor al ambiente", "Absorber el calor del espacio y cambiar el refrigerante de líquido a vapor", "Comprimir el refrigerante gaseoso", "Reducir la presión del refrigerante líquido"] },
+      { q: "El tubo capilar (dispositivo de expansión) cumple la función de:",
+        opciones: ["Aumentar la presión del refrigerante", "Rechazar el calor al exterior", "Reducir la presión y la temperatura del refrigerante, dosificando su paso al evaporador", "Aspirar el vapor del evaporador"] },
+      { q: "El compresor es una bomba cuya función principal, en condiciones normales de un ciclo de refrigeración, es:",
+        opciones: ["Aspirar el refrigerante en fase de vapor a baja presión", "Aspirar el refrigerante en fase líquida", "Aspirar refrigerante saturado", "Aspirar refrigerante líquido y vapor"] },
+      { q: "En una nevera doméstica que trabaja con R-134a a temperatura ambiente normal, las presiones de trabajo en baja y alta (en psi) son aproximadamente:",
+        opciones: ["8 a 15 psi en baja y 120 a 160 psi en alta", "50 a 60 psi en baja y 250 a 300 psi en alta", "0 psi en baja y 80 psi en alta", "100 psi en baja y 150 psi en alta"] },
+      { q: "Si al medir un sistema de refrigeración la presión de succión (baja) se encuentra muy por debajo de lo normal (cerca de vacío), una causa probable es:",
+        opciones: ["Exceso de gas refrigerante", "Falta de gas refrigerante o capilar obstruido", "El compresor trabajando de más", "El condensador sucio"] },
+      { q: "El refrigerante que se utiliza para cargar una nevera convencional de 9 pies, cumpliendo la normativa ambiental para controlar las sustancias que agotan la capa de ozono (SAO), es:",
+        opciones: ["R-134a", "R-600a", "R-290", "R-12"] },
+      { q: "El gas que usaban las neveras antiguas y que hoy está prohibido porque daña la capa de ozono (SAO) es:",
+        opciones: ["R-12", "R-600a", "R-290", "R-134a"] },
+      { q: "Al medir las terminales de un compresor se obtienen estas lecturas: C-R = 4.5 Ω, C-S = 3.5 Ω y R-S = 8 Ω. La bobina común corresponde a la terminal:",
+        opciones: ["C", "R", "S"] },
+      { q: "La unidad de medida de los capacitores es:",
+        opciones: ["Ohmios", "Voltios", "Amperios", "Microfaradios"] },
+      { q: "Para verificar si un compresor está en corto (a tierra), el multímetro se debe colocar en la posición de:",
+        opciones: ["Corriente alterna", "Corriente continua", "Amperios", "Continuidad"] },
+      { q: "La forma correcta de revisar un Protector Térmico con un multímetro es colocando las puntas en la posición de:",
+        opciones: ["Ohmios", "Continuidad", "Voltios", "Amperios"] },
+      { q: "La forma correcta de probar un Relay PTC con las puntas de un multímetro es en la posición de:",
+        opciones: ["Continuidad", "Ohmios", "Continuidad y ohmios", "Microfaradios"] },
+      { q: "El RLA se entiende como:",
+        opciones: ["El amperaje del compresor a plena marcha", "El máximo amperaje del compresor al momento de arrancar", "La máxima temperatura de un sistema de refrigeración", "La mínima temperatura que alcanza un sistema de refrigeración"] },
+    ]
+  },
+  "etapa2": {
+    titulo: "Etapa 2 · Aire Acondicionado",
+    preguntas: [
+      { q: "Si para un recinto se calculan 200 BTU/h por cada metro cúbico, una habitación de 5 m de largo × 4 m de ancho × 3 m de alto necesita un aire acondicionado con una capacidad de:",
+        opciones: ["9 000 BTU/hora", "12 000 BTU/hora", "18 000 BTU/hora", "5 000 BTU/hora"] },
+      { q: "El refrigerante que se utiliza en la mayoría de los mini split actuales (sistemas inverter) es:",
+        opciones: ["R-22", "R-410A", "R-12", "R-134a"] },
+      { q: "La función principal del control (termostato) en un aire acondicionado es:",
+        opciones: ["Medir la presión del refrigerante", "Encender y apagar el equipo según la temperatura del ambiente", "Regular el flujo del refrigerante", "Proteger el compresor de sobrecargas"] },
+      { q: "En un mini split, el evaporador se ubica en:",
+        opciones: ["La unidad condensadora (exterior)", "La unidad evaporadora (interior)", "La tubería de interconexión", "Dentro del compresor"] },
+      { q: "El circuito de control de un aire acondicionado (tarjeta electrónica) trabaja normalmente a:",
+        opciones: ["110 V", "220 V", "24 V", "12 V"] },
+      { q: "La función del capacitor de arranque en el compresor de un aire acondicionado es:",
+        opciones: ["Aumentar el voltaje de alimentación", "Dar el impulso inicial al motor para que arranque", "Reducir la corriente de marcha", "Proteger contra cortocircuitos"] },
+      { q: "Antes de dar mantenimiento a un aire acondicionado, la primera medida de seguridad es:",
+        opciones: ["Lavar los filtros", "Desconectar la energía eléctrica", "Medir la presión del gas", "Poner el equipo en modo frío"] },
+      { q: "El tubo de drenaje de un mini split debe instalarse:",
+        opciones: ["Con pendiente hacia el equipo", "Con pendiente hacia afuera (caída continua)", "Horizontal, sin pendiente", "Con un sifón en la parte alta"] },
+      { q: "Para hacer vacío a una instalación de aire acondicionado se utiliza:",
+        opciones: ["Únicamente el manifold", "La bomba de vacío", "El soplete", "El compresor"] },
+      { q: "La limpieza de los filtros de un mini split se recomienda hacer:",
+        opciones: ["Una vez al año", "Cada 2 a 4 semanas (según el uso)", "Solo cuando se dañan", "Nunca, son desechables"] },
+      { q: "En el sistema de aire acondicionado automotriz, el compresor es movido por:",
+        opciones: ["Un motor eléctrico propio", "La correa del motor del vehículo", "La batería directamente", "El alternador"] },
+      { q: "El cálculo de la carga térmica (BTU) de un ambiente sirve para:",
+        opciones: ["Saber cuánto gas refrigerante lleva el equipo", "Determinar la capacidad del equipo de A/C que se necesita", "Medir el consumo eléctrico", "Calcular el precio del mantenimiento"] },
+      { q: "El mantenimiento preventivo de un piso techo incluye principalmente:",
+        opciones: ["Cambiar el compresor", "Limpiar filtros, serpentín y drenaje", "Recargar gas cada mes", "Cambiar la tarjeta electrónica"] },
+      { q: "Si un mini split no enfría y el compresor arranca pero se detiene de inmediato, una causa probable es:",
+        opciones: ["Filtros demasiado limpios", "Capacitor de arranque defectuoso", "Exceso de gas refrigerante", "El control a 24 V apagado"] },
+      { q: "Escriba a continuación el paso a paso de la instalación de un aire acondicionado (según su criterio).",
+        abierta: true },
+    ]
+  }
+};
+
+const LETRAS = "abcdefghijklmnopqrstuvwxyz";
+
+// ===================== ESTADO =====================
+let examenActual = null;
+let examKeyActual = "";
+let nombreActual = "";
+let ultimosResultados = [];
+
+function cargarSelectores() {
+  const sel = document.getElementById("sel-examen");
+  sel.innerHTML = "";
+  for (const key in EXAMENES) {
+    const opt = document.createElement("option");
+    opt.value = key;
+    opt.textContent = EXAMENES[key].titulo;
+    sel.appendChild(opt);
+  }
+}
+
+function mostrar(id) {
+  ["vista-inicio", "vista-examen", "vista-resultado", "vista-panel"].forEach(v =>
+    document.getElementById(v).classList.toggle("hidden", v !== id));
+  window.scrollTo(0, 0);
+}
+
+function iniciarExamen() {
+  const key = document.getElementById("sel-examen").value;
+  const nombre = document.getElementById("inp-nombre").value.trim();
+  if (!nombre) { alert("Escribí tu nombre para empezar."); return; }
+  examKeyActual = key;
+  examenActual = EXAMENES[key];
+  nombreActual = nombre;
+  renderExamen();
+  document.getElementById("titulo-examen").textContent = examenActual.titulo;
+  document.getElementById("nombre-actual").textContent = nombre;
+  mostrar("vista-examen");
+}
+
+function renderExamen() {
+  const cont = document.getElementById("preguntas");
+  cont.innerHTML = "";
+  examenActual.preguntas.forEach((p, i) => {
+    const div = document.createElement("div");
+    div.className = "q";
+    const txt = document.createElement("div");
+    txt.className = "txt";
+    txt.innerHTML = (i + 1) + ". " + escaparHTML(p.q);
+    div.appendChild(txt);
+    if (p.abierta) {
+      const ta = document.createElement("textarea");
+      ta.rows = 5;
+      ta.placeholder = "Escribí tu respuesta… (esta pregunta se revisa aparte)";
+      ta.dataset.abierta = i;
+      div.appendChild(ta);
+    } else {
+      p.opciones.forEach((op, j) => {
+        const lab = document.createElement("label");
+        lab.className = "opt";
+        const radio = document.createElement("input");
+        radio.type = "radio";
+        radio.name = "q" + i;
+        radio.value = j;
+        lab.appendChild(radio);
+        const letra = document.createElement("span");
+        letra.className = "letter";
+        letra.textContent = LETRAS[j] + ")";
+        lab.appendChild(letra);
+        const span = document.createElement("span");
+        span.textContent = op;
+        lab.appendChild(span);
+        div.appendChild(lab);
+      });
+    }
+    cont.appendChild(div);
+  });
+}
+
+async function calificar() {
+  const btn = document.getElementById("btn-calificar");
+  btn.disabled = true;
+  btn.textContent = "Calificando…";
+
+  const respuestas = [];
+  let abierta = null;
+  examenActual.preguntas.forEach((p, i) => {
+    if (p.abierta) {
+      const ta = document.querySelector('textarea[data-abierta="' + i + '"]');
+      abierta = ta ? (ta.value.trim() || null) : null;
+      return;
+    }
+    const sel = document.querySelector('input[name="q' + i + '"]:checked');
+    respuestas.push(sel ? parseInt(sel.value) : -1);
+  });
+
+  let r;
+  try {
+    const data = await calificarRPC(nombreActual, examKeyActual, respuestas, abierta);
+    r = data[0];
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = "Guardar y calificar";
+    alert("Error al calificar: " + err.message);
+    return;
+  }
+
+  btn.disabled = false;
+  btn.textContent = "Guardar y calificar";
+  document.getElementById("res-nota").textContent = r.nota;
+  document.getElementById("res-total").textContent = r.total;
+  document.getElementById("res-pct").textContent = r.pct + "%";
+  const estado = document.getElementById("res-estado");
+  estado.textContent = r.pct >= 70 ? "✅ Aprobado" : "❌ No aprobado";
+  estado.className = r.pct >= 70 ? "aprobado" : "reprobado";
+  mostrar("vista-resultado");
+}
+
+function volverInicio() {
+  document.getElementById("inp-nombre").value = "";
+  mostrar("vista-inicio");
+}
+
+async function mostrarPanel() {
+  const cont = document.getElementById("tabla-panel");
+  cont.innerHTML = '<p class="muted">Cargando…</p>';
+  mostrar("vista-panel");
+
+  let data;
+  try {
+    data = await fetchResultados();
+  } catch (err) {
+    cont.innerHTML = '<p class="muted">Error: ' + err.message + "</p>";
+    return;
+  }
+
+  ultimosResultados = data || [];
+  if (!ultimosResultados.length) {
+    cont.innerHTML = '<p class="muted">Todavía no hay resultados.</p>';
+  } else {
+    let html = "<table><thead><tr><th>Nombre</th><th>Examen</th><th>Nota</th><th>%</th><th>Fecha</th></tr></thead><tbody>";
+    ultimosResultados.forEach(d => {
+      const fecha = d.creado_en ? new Date(d.creado_en).toLocaleString("es-SV") : "";
+      html += "<tr><td>" + escaparHTML(d.nombre) + "</td><td>" + escaparHTML(d.examen) + "</td><td>" + d.nota + "/" + d.total + "</td><td>" + d.pct + "%</td><td>" + escaparHTML(fecha) + "</td></tr>";
+    });
+    html += "</tbody></table>";
+    cont.innerHTML = html;
+  }
+}
+
+function exportarJSON() {
+  if (!ultimosResultados.length) { alert("No hay resultados para exportar."); return; }
+  const blob = new Blob([JSON.stringify(ultimosResultados, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "resultados_examen.json";
+  a.click();
+}
+
+function escaparHTML(s) {
+  return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+}
+
+cargarSelectores();
+</script>
+</body>
+</html>
