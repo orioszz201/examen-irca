@@ -98,6 +98,9 @@
       <input type="text" id="inp-nombre" placeholder="Escribí tu nombre completo">
     </div>
     <button class="btn block" onclick="iniciarExamen()">Empezar examen</button>
+    <div class="btnrow solo-app" style="display:none">
+      <button class="btn ghost" onclick="mostrarPanel()">← Volver al panel</button>
+    </div>
   </div>
 
   <!-- EXAMEN -->
@@ -106,6 +109,9 @@
     <p class="muted">Alumno: <strong id="nombre-actual"></strong></p>
     <div id="preguntas"></div>
     <button class="btn block" id="btn-calificar" onclick="calificar()">Calificar</button>
+    <div class="btnrow solo-app" style="display:none">
+      <button class="btn ghost" onclick="mostrarPanel()">← Volver al panel</button>
+    </div>
   </div>
 
   <!-- RESULTADO -->
@@ -129,6 +135,7 @@
     <h2>Panel de resultados (instructor)</h2>
     <div class="toolbar">
       <button class="btn" onclick="compartirLink()">📤 Compartir link</button>
+      <button class="btn ghost" onclick="verExamen()">👁️ Ver examen</button>
       <button class="btn" onclick="exportarJSON()">Exportar JSON</button>
       <button class="btn ghost" onclick="window.print()">Imprimir / PDF</button>
       <button class="btn ghost" onclick="mostrarPanel()">Actualizar</button>
@@ -259,6 +266,9 @@ let ultimosResultados = [];
 let ultimasRespuestas = [];
 let ultimaAbierta = null;
 let intentos = 0;
+
+// Detectar si corre como app nativa (APK) o como página web (link)
+const esApp = window.location.hostname === "localhost" || window.location.protocol === "capacitor:";
 
 function cargarSelectores() {
   const sel = document.getElementById("sel-examen");
@@ -420,6 +430,11 @@ function volverInicio() {
   mostrar("vista-inicio");
 }
 
+function verExamen() {
+  document.getElementById("inp-nombre").value = "";
+  mostrar("vista-inicio");
+}
+
 async function mostrarPanel() {
   const cont = document.getElementById("tabla-panel");
   cont.innerHTML = '<p class="muted">Cargando…</p>';
@@ -503,13 +518,15 @@ async function vaciarResultados() {
 
 cargarSelectores();
 
-// Detectar si corre como app nativa (APK) o como página web (link)
-const esApp = window.location.hostname === "localhost" || window.location.protocol === "capacitor:";
-
 // La app (panel de admin) abre directo en el panel; el link web abre el examen.
 // Si el link web trae #panel, también abre el panel.
 if (esApp || location.hash === "#panel") {
   mostrarPanel();
+}
+
+// Mostrar botones solo de la app (← Volver al panel) únicamente en el APK
+if (esApp) {
+  document.querySelectorAll(".solo-app").forEach(el => el.style.display = "");
 }
 </script>
 </body>
