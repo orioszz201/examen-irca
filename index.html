@@ -317,37 +317,51 @@ async function iniciarExamen() {
   mostrar("vista-examen");
 }
 
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
 function renderExamen() {
   const cont = document.getElementById("preguntas");
   cont.innerHTML = "";
-  examenActual.preguntas.forEach((p, i) => {
+
+  // Barajar el orden de preguntas y opciones en cada intento
+  const ordenPreguntas = shuffle([...examenActual.preguntas.keys()]);
+  const ordenOpciones = examenActual.preguntas.map(p => shuffle([...p.opciones.keys()]));
+
+  ordenPreguntas.forEach((qi, di) => {
+    const p = examenActual.preguntas[qi];
     const div = document.createElement("div");
     div.className = "q";
     const txt = document.createElement("div");
     txt.className = "txt";
-    txt.innerHTML = (i + 1) + ". " + escaparHTML(p.q);
+    txt.innerHTML = (di + 1) + ". " + escaparHTML(p.q);
     div.appendChild(txt);
     if (p.abierta) {
       const ta = document.createElement("textarea");
       ta.rows = 5;
       ta.placeholder = "Escribí tu respuesta… (esta pregunta se revisa aparte)";
-      ta.dataset.abierta = i;
+      ta.dataset.abierta = qi;
       div.appendChild(ta);
     } else {
-      p.opciones.forEach((op, j) => {
+      ordenOpciones[qi].forEach((oj, dj) => {
         const lab = document.createElement("label");
         lab.className = "opt";
         const radio = document.createElement("input");
         radio.type = "radio";
-        radio.name = "q" + i;
-        radio.value = j;
+        radio.name = "q" + qi;
+        radio.value = oj;
         lab.appendChild(radio);
         const letra = document.createElement("span");
         letra.className = "letter";
-        letra.textContent = LETRAS[j] + ")";
+        letra.textContent = LETRAS[dj] + ")";
         lab.appendChild(letra);
         const span = document.createElement("span");
-        span.textContent = op;
+        span.textContent = p.opciones[oj];
         lab.appendChild(span);
         div.appendChild(lab);
       });
@@ -412,15 +426,7 @@ async function guardarNota() {
 
 function reintentar() {
   intentos++;
-  examenActual.preguntas.forEach((p, i) => {
-    if (p.abierta) {
-      const ta = document.querySelector('textarea[data-abierta="' + i + '"]');
-      if (ta) ta.value = "";
-    } else {
-      const sel = document.querySelector('input[name="q' + i + '"]:checked');
-      if (sel) sel.checked = false;
-    }
-  });
+  renderExamen(); // vuelve a barajar preguntas y opciones
   mostrar("vista-examen");
   window.scrollTo(0, 0);
 }
