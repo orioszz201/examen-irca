@@ -124,6 +124,7 @@
   <div id="vista-panel" class="card hidden">
     <h2>Panel de resultados (instructor)</h2>
     <div class="toolbar">
+      <button class="btn" onclick="compartirLink()">📤 Compartir link</button>
       <button class="btn" onclick="exportarJSON()">Exportar JSON</button>
       <button class="btn ghost" onclick="window.print()">Imprimir / PDF</button>
       <button class="btn ghost" onclick="mostrarPanel()">Actualizar</button>
@@ -430,8 +431,12 @@ async function vaciarResultados() {
 
 cargarSelectores();
 
-// Si el link trae #panel, abrir el panel de instructor directamente
-if (location.hash === "#panel") {
+// Detectar si corre como app nativa (APK) o como página web (link)
+const esApp = window.location.hostname === "localhost" || window.location.protocol === "capacitor:";
+
+// La app (panel de admin) abre directo en el panel; el link web abre el examen.
+// Si el link web trae #panel, también abre el panel.
+if (esApp || location.hash === "#panel") {
   mostrarPanel();
 }
 </script>
