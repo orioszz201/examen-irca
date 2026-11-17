@@ -342,6 +342,12 @@ async function iniciarExamen() {
   if (!grupo) { alert("Elegí tu grupo para empezar."); return; }
   if (!nombre) { alert("Escribí tu nombre para empezar."); return; }
 
+  // Candado por dispositivo: este celular/navegador ya contestó esta etapa y grupo
+  if (localStorage.getItem("rz_done_" + key + "_" + grupo)) {
+    alert("Este dispositivo ya contestó esta etapa y grupo. No se puede repetir.");
+    return;
+  }
+
   // Evitar que la misma persona conteste dos veces la misma etapa y grupo
   try {
     const q = "nombre=eq." + encodeURIComponent(nombre) + "&examen=eq." + key + "&grupo=eq." + encodeURIComponent(grupo);
@@ -468,6 +474,7 @@ async function calificar() {
 async function guardarNota() {
   try {
     await guardarRPC(nombreActual, examKeyActual, ultimasRespuestas, ultimaAbierta, grupoActual);
+    localStorage.setItem("rz_done_" + examKeyActual + "_" + grupoActual, "1");
     alert("✅ Tu nota quedó guardada. ¡Gracias!");
     volverInicio();
   } catch (err) {
