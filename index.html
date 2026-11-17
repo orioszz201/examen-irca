@@ -98,10 +98,6 @@
       <input type="text" id="inp-nombre" placeholder="Escribí tu nombre completo">
     </div>
     <button class="btn block" onclick="iniciarExamen()">Empezar examen</button>
-    <div class="btnrow">
-      <button class="btn ghost" onclick="mostrarPanel()">Ver panel (instructor)</button>
-      <button class="btn ghost" onclick="compartirLink()">📤 Compartir link</button>
-    </div>
   </div>
 
   <!-- EXAMEN -->
@@ -263,10 +259,26 @@ function mostrar(id) {
   window.scrollTo(0, 0);
 }
 
-function iniciarExamen() {
+async function iniciarExamen() {
   const key = document.getElementById("sel-examen").value;
   const nombre = document.getElementById("inp-nombre").value.trim();
   if (!nombre) { alert("Escribí tu nombre para empezar."); return; }
+
+  // Evitar que la misma persona conteste dos veces la misma etapa
+  try {
+    const q = "nombre=eq." + encodeURIComponent(nombre) + "&examen=eq." + key;
+    const res = await fetch(SUPABASE_URL + "/rest/v1/resultados?select=id&" + q, {
+      headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY }
+    });
+    if (res.ok) {
+      const datos = await res.json();
+      if (datos.length > 0) {
+        alert("Ya existe una respuesta con este nombre para esta etapa. Cada persona contesta una sola vez.");
+        return;
+      }
+    }
+  } catch (e) { /* si no se puede verificar, se deja pasar */ }
+
   examKeyActual = key;
   examenActual = EXAMENES[key];
   nombreActual = nombre;
@@ -379,7 +391,8 @@ async function mostrarPanel() {
     let html = "<table><thead><tr><th>Nombre</th><th>Examen</th><th>Nota</th><th>%</th><th>Fecha</th></tr></thead><tbody>";
     ultimosResultados.forEach(d => {
       const fecha = d.creado_en ? new Date(d.creado_en).toLocaleString("es-SV") : "";
-      html += "<tr><td>" + escaparHTML(d.nombre) + "</td><td>" + escaparHTML(d.examen) + "</td><td>" + d.nota + "/" + d.total + "</td><td>" + d.pct + "%</td><td>" + escaparHTML(fecha) + "</td></tr>";
+      const nomEx = { "etapa1": "Etapa 1 · Refrigeración", "etapa2": "Etapa 2 · Aire Acondicionado" }[d.examen] || d.examen;
+      html += "<tr><td>" + escaparHTML(d.nombre) + "</td><td>" + escaparHTML(nomEx) + "</td><td>" + d.nota + "/" + d.total + "</td><td>" + d.pct + "%</td><td>" + escaparHTML(fecha) + "</td></tr>";
     });
     html += "</tbody></table>";
     cont.innerHTML = html;
