@@ -105,7 +105,7 @@
     <h2 id="titulo-examen"></h2>
     <p class="muted">Alumno: <strong id="nombre-actual"></strong></p>
     <div id="preguntas"></div>
-    <button class="btn block" id="btn-calificar" onclick="calificar()">Guardar y calificar</button>
+    <button class="btn block" id="btn-calificar" onclick="calificar()">Calificar</button>
   </div>
 
   <!-- RESULTADO -->
@@ -115,8 +115,13 @@
       <div class="nota"><span id="res-nota"></span>/<span id="res-total"></span></div>
       <div class="de" id="res-pct"></div>
       <div id="res-estado"></div>
+      <div class="de" id="res-intento"></div>
     </div>
-    <button class="btn block" onclick="volverInicio()">Terminar</button>
+    <button class="btn block" onclick="guardarNota()">✅ Guardar nota</button>
+    <div class="btnrow">
+      <button class="btn ghost" id="btn-reintentar" onclick="reintentar()">🔄 Reintentar</button>
+      <button class="btn ghost" onclick="volverInicio()">Salir sin guardar</button>
+    </div>
   </div>
 
   <!-- PANEL -->
@@ -142,8 +147,18 @@
 const SUPABASE_URL = "https://ahcblxfjshrvukhfrteq.supabase.co";
 const SUPABASE_KEY = "sb_publishable_mNCgIg37tfX7hBbudsWdKw_xQ87xkGG";
 
-async function calificarRPC(nombre, examen, respuestas, abierta) {
+async function calificarRPC(examen, respuestas) {
   const res = await fetch(SUPABASE_URL + "/rest/v1/rpc/calificar", {
+    method: "POST",
+    headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY, "Content-Type": "application/json" },
+    body: JSON.stringify({ p_examen: examen, p_respuestas: respuestas })
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+async function guardarRPC(nombre, examen, respuestas, abierta) {
+  const res = await fetch(SUPABASE_URL + "/rest/v1/rpc/guardar_resultado", {
     method: "POST",
     headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY, "Content-Type": "application/json" },
     body: JSON.stringify({ p_nombre: nombre, p_examen: examen, p_respuestas: respuestas, p_abierta: abierta })
@@ -241,6 +256,9 @@ let examenActual = null;
 let examKeyActual = "";
 let nombreActual = "";
 let ultimosResultados = [];
+let ultimasRespuestas = [];
+let ultimaAbierta = null;
+let intentos = 0;
 
 function cargarSelectores() {
   const sel = document.getElementById("sel-examen");
@@ -282,6 +300,7 @@ async function iniciarExamen() {
   examKeyActual = key;
   examenActual = EXAMENES[key];
   nombreActual = nombre;
+  intentos = 0;
   renderExamen();
   document.getElementById("titulo-examen").textContent = examenActual.titulo;
   document.getElementById("nombre-actual").textContent = nombre;
@@ -344,26 +363,56 @@ async function calificar() {
     respuestas.push(sel ? parseInt(sel.value) : -1);
   });
 
+  ultimasRespuestas = respuestas;
+  ultimaAbierta = abierta;
+
   let r;
   try {
-    const data = await calificarRPC(nombreActual, examKeyActual, respuestas, abierta);
+    const data = await calificarRPC(examKeyActual, respuestas);
     r = data[0];
   } catch (err) {
     btn.disabled = false;
-    btn.textContent = "Guardar y calificar";
+    btn.textContent = "Calificar";
     alert("Error al calificar: " + err.message);
     return;
   }
 
   btn.disabled = false;
-  btn.textContent = "Guardar y calificar";
+  btn.textContent = "Calificar";
   document.getElementById("res-nota").textContent = r.nota;
   document.getElementById("res-total").textContent = r.total;
   document.getElementById("res-pct").textContent = r.pct + "%";
   const estado = document.getElementById("res-estado");
   estado.textContent = r.pct >= 70 ? "✅ Aprobado" : "❌ No aprobado";
   estado.className = r.pct >= 70 ? "aprobado" : "reprobado";
+  document.getElementById("res-intento").textContent = "Intento " + (intentos + 1) + " de 3";
+  document.getElementById("btn-reintentar").style.display = (intentos < 2) ? "" : "none";
   mostrar("vista-resultado");
+}
+
+async function guardarNota() {
+  try {
+    await guardarRPC(nombreActual, examKeyActual, ultimasRespuestas, ultimaAbierta);
+    alert("✅ Tu nota quedó guardada. ¡Gracias!");
+    volverInicio();
+  } catch (err) {
+    alert("Error al guardar: " + err.message);
+  }
+}
+
+function reintentar() {
+  intentos++;
+  examenActual.preguntas.forEach((p, i) => {
+    if (p.abierta) {
+      const ta = document.querySelector('textarea[data-abierta="' + i + '"]');
+      if (ta) ta.value = "";
+    } else {
+      const sel = document.querySelector('input[name="q' + i + '"]:checked');
+      if (sel) sel.checked = false;
+    }
+  });
+  mostrar("vista-examen");
+  window.scrollTo(0, 0);
 }
 
 function volverInicio() {
