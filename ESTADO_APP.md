@@ -1,12 +1,32 @@
-# RZ Pro Examen — Estado al 2026-11-16
+# RZ Pro Examen — Estado al 2026-11-18
+
+## Novedad v3.2 (2026-11-18)
+Control de horas reorganizado:
+- **Grupo**: el detalle libre se reemplazó por un desplegable con los grupos de la sección 👥 Grupos; se guarda el nombre como texto y hay copia local (`rz_grupos_cache`) para cuando Supabase no responde. Registros viejos con "Detalle" se siguen mostrando.
+- **Por mes**: selector de mes (por defecto el actual); tabla, horas acumuladas, bruto, renta 10%, neto y reporte se calculan solo para ese mes. La fecha debe caer en el mes elegido.
+- **Reporte/PDF**: encabezado con mes, nombre y fecha de emisión; fechas `dd/mm/aaaa`; sin columna de borrar; línea de firma; neto sin descuadre de centavos. El PDF toma el nombre `Horas_<mes>_<año>.pdf`.
+- Móvil: la tabla ya no se corta (se oculta la columna Día en pantallas angostas).
+- Verificado en navegador (1280 y 360 px) con datos reales, sin errores JS.
+
+## Novedad v3.1 (2026-11-17, publicada)
+Resultados expandibles: cada fila (▶/▼) muestra pregunta por pregunta lo contestado + respuesta abierta; oculto por defecto + botón mostrar/ocultar todo. Verificado con datos reales.
+
+## Novedad v3.0 (2026-11-17, publicada)
+Sección ⏱️ Horas: precio/hora guardado, registro por fecha de calendario con día automático, detalle opcional, acumulado, bruto, renta 10%, neto y botón Reporte/PDF (imprime solo tabla + resumen con período). Datos en localStorage del instructor. Verificado en navegador (cálculo 8h×$8.50=$61.20 neto + modo impresión).
+
+## Novedad v2.9 (2026-11-17)
+Responsive corregido: `align-items: stretch` en móvil + tabla con scroll horizontal (antes empujaba el layout a la izquierda con resultados). Verificado a 375px con datos reales.
 
 ## Qué es
 App web + APK Android para aplicar los exámenes de conocimiento del diplomado (Etapa 1 · Refrigeración, Etapa 2 · Aire Acondicionado) a varios grupos.
 
 - **Web (alumnos):** `https://orioszz201.github.io/examen-irca/`
 - **Panel (instructor):** `https://orioszz201.github.io/examen-irca/#panel`
-- **APK:** `github.com/orioszz201/examen-irca/releases` → `RZProExamen-v2.7-debug.apk`
+- **APK:** `github.com/orioszz201/examen-irca/releases` → `RZProExamen-v2.8-debug.apk`
 - **Código:** `/home/oscar/workspace/Utiles/examen_app/` (repo git `orioszz201/examen-irca`)
+
+## Novedad v2.8 (2026-11-17)
+Panel con **menú lateral** (Resultados / Grupos / Compartir / Exámenes; barra superior en celular) + tarjeta **resumen** (notas, promedio, aprobados ≥70) + **semáforo** en % por fila. Verificado en navegador sin errores (QA 2026-11-17).
 
 ## Stack
 HTML/CSS/JS vanilla (sin framework) · Supabase (Postgres + RPC) · GitHub Pages (hosting) · Capacitor 8 (APK) · `@capacitor/share` (compartir nativo).

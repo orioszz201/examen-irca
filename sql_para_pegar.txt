@@ -1,0 +1,43 @@
+create table if not exists public.grupos (
+  id bigint generated always as identity primary key,
+  nombre text not null unique
+);
+alter table public.grupos enable row level security;
+create policy "grupos_select" on public.grupos for select to anon, authenticated using (true);
+create policy "grupos_insert" on public.grupos for insert to anon, authenticated with check (true);
+create policy "grupos_delete" on public.grupos for delete to anon, authenticated using (true);
+
+alter table public.resultados add column if not exists grupo text;
+
+drop function if exists public.guardar_resultado(text, text, int[], text);
+
+create or replace function public.guardar_resultado(
+  p_nombre text,
+  p_examen text,
+  p_respuestas int[],
+  p_abierta text default null,
+  p_grupo text default null
+)
+returns table (nota int, total int, pct int)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_nota int := 0;
+  v_total int;
+  v_pct int;
+begin
+  select count(*) into v_total from public.claves where examen = p_examen;
+  select count(*) into v_nota
+  from public.claves c
+  where c.examen = p_examen
+    and c.correcta = p_respuestas[c.num];
+  v_pct := round((v_nota::numeric / nullif(v_total, 0)) * 100);
+  insert into public.resultados (nombre, examen, nota, total, pct, respuesta_abierta, grupo)
+  values (p_nombre, p_examen, v_nota, v_total, v_pct, p_abierta, p_grupo);
+  return query select v_nota, v_total, v_pct;
+end;
+$$;
+
+grant execute on function public.guardar_resultado(text, text, int[], text, text) to anon, authenticated;

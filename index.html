@@ -35,9 +35,9 @@
   .card h2 { color: var(--primary); font-size: 1.05rem; margin-bottom: 14px; }
   .field { margin-bottom: 14px; }
   .field label { display: block; font-weight: 600; font-size: .9rem; margin-bottom: 5px; }
-  input[type=text], select, textarea {
+  input[type=text], input[type=date], input[type=month], select, textarea {
     width: 100%; padding: 10px 12px; border: 1px solid #c7d6de; border-radius: 8px;
-    font-size: .95rem; font-family: inherit;
+    font-size: .95rem; font-family: inherit; background: #fff;
   }
   input:focus, select:focus, textarea:focus { outline: 2px solid var(--secondary); border-color: transparent; }
   .btn {
@@ -94,8 +94,24 @@
   .detalle p { margin-bottom: 10px; font-size: .85rem; }
   .detalle em { color: #667; }
   .linkbox { background: var(--light); border-radius: 8px; padding: 10px 12px; font-size: .9rem; word-break: break-all; margin: 10px 0; }
+  #enc-reporte, #firma-reporte { display: none; }
+  #tabla-horas table { min-width: 460px; }
+  @media (max-width: 520px) {
+    #tabla-horas table { min-width: 0; font-size: .82rem; }
+    #tabla-horas th, #tabla-horas td { padding: 7px 5px; }
+    #tabla-horas th:nth-child(2), #tabla-horas td:nth-child(2) { display: none; }
+    #tabla-horas td:nth-child(4) { max-width: 92px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    #tabla-horas td .btn { padding: 4px 7px; }
+  }
   @media print {
     header, footer, .panel-nav, .no-print { display: none !important; }
+    #enc-reporte { display: block; margin-bottom: 14px; }
+    #tabla-horas table { min-width: 0 !important; }
+    #tabla-horas > div { overflow: visible !important; }
+    #tabla-horas th:nth-child(2), #tabla-horas td:nth-child(2) { display: table-cell !important; }
+    #enc-reporte h3 { color: var(--primary); font-size: 1.1rem; }
+    #enc-reporte p { color: #333; font-size: .82rem; }
+    #firma-reporte { display: block; margin-top: 40px; font-size: .85rem; color: #333; }
     body { padding-bottom: 0; }
     .wrap { max-width: 100%; }
     .card { box-shadow: none; }
@@ -222,8 +238,17 @@
           </div>
         </section>
         <section id="sec-horas" class="card hidden">
-          <h2>⏱️ Horas clase trabajadas</h2>
+          <h2 class="no-print">⏱️ Horas clase trabajadas</h2>
+          <div id="enc-reporte">
+            <h3>Horas clase — <span id="rep-mes"></span></h3>
+            <p>Oscar G. Ríos · Rz-Pro Servicio Técnico</p>
+            <p id="rep-emitido"></p>
+          </div>
           <div class="no-print">
+          <div class="field">
+            <label>Mes</label>
+            <input type="month" id="inp-hora-mes" onchange="renderHoras()">
+          </div>
           <div class="field">
             <label>Precio por hora ($)</label>
             <input type="text" inputmode="decimal" id="inp-precio-hora" onchange="guardarPrecioHora()" placeholder="Ej. 8.50">
@@ -237,16 +262,17 @@
             <input type="text" inputmode="decimal" id="inp-hora-cant" placeholder="Ej. 4">
           </div>
           <div class="field">
-            <label>Detalle (sede / grupo, opcional)</label>
-            <input type="text" id="inp-hora-detalle" placeholder="Ej. La Unión sábado">
+            <label>Grupo</label>
+            <select id="inp-hora-grupo"></select>
           </div>
           <button class="btn block" onclick="agregarHora()">➕ Agregar horas</button>
           </div>
           <div class="stats" id="stats-horas" style="margin-top:12px;"></div>
           <p class="muted" id="sub-horas" style="margin:4px 0 0;"></p>
           <div id="tabla-horas" style="margin-top:8px;"></div>
+          <div id="firma-reporte"><span>Firma: ______________________________</span></div>
           <div class="btnrow no-print" style="margin-top:10px;">
-            <button class="btn ghost" onclick="window.print()">🖨️ Reporte / PDF</button>
+            <button class="btn ghost" onclick="reporteHoras()">🖨️ Reporte / PDF</button>
           </div>
         </section>
       </div>
@@ -422,9 +448,27 @@ async function cargarGrupos() {
       selFiltro.appendChild(opt);
     });
     if (actualFiltro) selFiltro.value = actualFiltro;
+    localStorage.setItem("rz_grupos_cache", JSON.stringify(grupos));
+    pintarGruposHoras();
   } catch (e) {
-    grupos = [];
+    try { grupos = JSON.parse(localStorage.getItem("rz_grupos_cache") || "[]"); } catch (e2) { grupos = []; }
+    pintarGruposHoras();
   }
+}
+
+// Llena el desplegable de grupos del control de horas (con los grupos de la sección Grupos)
+function pintarGruposHoras() {
+  const sel = document.getElementById("inp-hora-grupo");
+  if (!sel) return;
+  const prev = sel.value;
+  sel.innerHTML = grupos.length ? '<option value="">Elegí grupo…</option>' : '<option value="">Sin grupos cargados</option>';
+  grupos.forEach(g => {
+    const opt = document.createElement("option");
+    opt.value = g;
+    opt.textContent = g;
+    sel.appendChild(opt);
+  });
+  if (prev && grupos.includes(prev)) sel.value = prev;
 }
 
 function mostrar(id) {
@@ -738,6 +782,7 @@ function toggleTodosDetalles() {
 
 // ===================== HORAS CLASE =====================
 const DIAS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
 
 function leerHoras() {
   try { return JSON.parse(localStorage.getItem("rz_horas") || "[]"); } catch (e) { return []; }
@@ -759,7 +804,37 @@ function guardarPrecioHora() {
 
 function diaDeFecha(fecha) {
   const d = new Date(fecha + "T12:00:00");
-  return isNaN(d) ? "" : DIAS[d.getDay()];
+  return isNaN(d.getTime()) ? "" : DIAS[d.getDay()];
+}
+
+function mesDeHoy() {
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
+}
+
+function hoyISO() {
+  const d = new Date();
+  return mesDeHoy() + "-" + String(d.getDate()).padStart(2, "0");
+}
+
+function nombreMes(mes) {
+  const p = (mes || "").split("-");
+  if (p.length < 2) return mes || "";
+  return MESES[+p[1] - 1] + " " + p[0];
+}
+
+function fechaLatina(iso) {
+  const p = (iso || "").split("-");
+  return p.length === 3 ? p[2] + "/" + p[1] + "/" + p[0] : (iso || "");
+}
+
+function mesElegido() {
+  const inp = document.getElementById("inp-hora-mes");
+  return inp.value || mesDeHoy();
+}
+
+function round2(n) {
+  return Math.round(n * 100) / 100;
 }
 
 function fmtDinero(n) {
@@ -767,55 +842,84 @@ function fmtDinero(n) {
 }
 
 function agregarHora() {
+  const mes = mesElegido();
   const fecha = document.getElementById("inp-hora-fecha").value;
   const cant = parseFloat(String(document.getElementById("inp-hora-cant").value).replace(",", "."));
-  const detalle = document.getElementById("inp-hora-detalle").value.trim();
+  const grupo = document.getElementById("inp-hora-grupo").value;
   if (!fecha) { alert("Elegí la fecha en el calendario."); return; }
+  if (fecha.slice(0, 7) !== mes) { alert("La fecha no es del mes elegido (" + nombreMes(mes) + ")."); return; }
+  if (!grupos.length) { alert("No hay grupos cargados. Agregá uno en 👥 Grupos."); return; }
+  if (!grupo) { alert("Elegí el grupo."); return; }
   if (!cant || cant <= 0) { alert("Poné la cantidad de horas."); return; }
   const arr = leerHoras();
-  arr.push({ fecha: fecha, dia: diaDeFecha(fecha), horas: cant, detalle: detalle });
+  arr.push({ fecha: fecha, dia: diaDeFecha(fecha), horas: cant, grupo: grupo });
   arr.sort((a, b) => a.fecha < b.fecha ? -1 : 1);
   guardarHoras(arr);
   document.getElementById("inp-hora-cant").value = "";
-  document.getElementById("inp-hora-detalle").value = "";
   renderHoras();
 }
 
 function borrarHora(i) {
   const arr = leerHoras();
-  if (!confirm("¿Borrar " + arr[i].fecha + " (" + arr[i].horas + " h)?")) return;
+  if (!confirm("¿Borrar el registro del " + fechaLatina(arr[i].fecha) + " (" + arr[i].horas + " h)?")) return;
   arr.splice(i, 1);
   guardarHoras(arr);
   renderHoras();
 }
 
 function renderHoras() {
+  const inpMes = document.getElementById("inp-hora-mes");
+  if (!inpMes.value) inpMes.value = localStorage.getItem("rz_horas_mes") || mesDeHoy();
+  const mes = inpMes.value;
+  localStorage.setItem("rz_horas_mes", mes);
+
   document.getElementById("inp-precio-hora").value = localStorage.getItem("rz_precio_hora") || "";
-  const arr = leerHoras();
+  if (!document.getElementById("inp-hora-fecha").value) document.getElementById("inp-hora-fecha").value = mesDeHoy() === mes ? hoyISO() : "";
+  pintarGruposHoras();
+
   const precio = leerPrecioHora();
-  const totalH = arr.reduce((a, r) => a + (+r.horas || 0), 0);
-  const bruto = totalH * precio;
-  const renta = bruto * 0.10;
-  const neto = bruto - renta;
-  let st = '<div class="stat"><div class="n">' + (Math.round(totalH * 100) / 100) + '</div><div class="t">horas acumuladas</div></div>' +
+  const todas = leerHoras();
+  const arr = todas.filter(r => (r.fecha || "").slice(0, 7) === mes);
+  const totalH = round2(arr.reduce((a, r) => a + (+r.horas || 0), 0));
+  const bruto = round2(totalH * precio);
+  const renta = round2(bruto * 0.10);
+  const neto = round2(bruto - renta);
+
+  let st = '<div class="stat"><div class="n">' + totalH + '</div><div class="t">horas acumuladas</div></div>' +
     '<div class="stat"><div class="n">' + fmtDinero(bruto) + '</div><div class="t">bruto</div></div>' +
-    '<div class="stat"><div class="n">−' + fmtDinero(renta) + '</div><div class="t">renta 10%</div></div>' +
+    '<div class="stat"><div class="n">' + (renta > 0 ? "−" : "") + fmtDinero(renta) + '</div><div class="t">renta 10%</div></div>' +
     '<div class="stat"><div class="n">' + fmtDinero(neto) + '</div><div class="t">neto a cobrar</div></div>';
   document.getElementById("stats-horas").innerHTML = st;
+
   document.getElementById("sub-horas").textContent =
-    arr.length + (arr.length === 1 ? " registro" : " registros") + " · " + fmtDinero(precio) + "/hora" +
-    (arr.length ? " · del " + arr[0].fecha + " al " + arr[arr.length - 1].fecha : "");
+    arr.length + (arr.length === 1 ? " registro" : " registros") + " · " + nombreMes(mes) + " · " + fmtDinero(precio) + " por hora";
+
+  document.getElementById("rep-mes").textContent = nombreMes(mes);
+  document.getElementById("rep-emitido").textContent = "Emitido: " + fechaLatina(hoyISO());
+
   const cont = document.getElementById("tabla-horas");
   if (!arr.length) {
-    cont.innerHTML = '<p class="muted">Todavía no hay horas registradas.</p>';
+    cont.innerHTML = '<p class="muted">Todavía no hay horas registradas en ' + nombreMes(mes) + '.</p>';
     return;
   }
-  let html = "<div style='overflow-x:auto'><table style='min-width:480px'><thead><tr><th>Fecha</th><th>Día</th><th>Horas</th><th>Detalle</th><th></th></tr></thead><tbody>";
-  arr.forEach((r, i) => {
-    html += "<tr><td>" + escaparHTML(r.fecha) + "</td><td>" + escaparHTML(r.dia || "") + "</td><td>" + r.horas + "</td><td>" + escaparHTML(r.detalle || "—") + "</td>" +
-      "<td><button class=\"btn ghost\" style=\"padding:6px 10px;\" onclick=\"borrarHora(" + i + ")\">✕</button></td></tr>";
+
+  // El índice usado para borrar es el de la lista completa ordenada
+  let html = "<div style='overflow-x:auto'><table id='tabla-horas-rows'><thead><tr><th>Fecha</th><th>Día</th><th>Horas</th><th>Grupo</th><th class='no-print'></th></tr></thead><tbody>";
+  arr.forEach(r => {
+    const idx = todas.indexOf(r);
+    html += "<tr><td>" + escaparHTML(fechaLatina(r.fecha)) + "</td><td>" + escaparHTML(r.dia || "") + "</td>" +
+      "<td>" + r.horas + "</td><td>" + escaparHTML(r.grupo || r.detalle || "—") + "</td>" +
+      "<td class='no-print'><button class=\"btn ghost\" style=\"padding:6px 10px;\" onclick=\"borrarHora(" + idx + ")\">✕</button></td></tr>";
   });
   cont.innerHTML = html + "</tbody></table></div>";
+}
+
+function reporteHoras() {
+  const mes = mesElegido();
+  const tituloPrevio = document.title;
+  document.title = "Horas_" + nombreMes(mes).replace(/\s+/g, "_");
+  window.print();
+  window.onafterprint = () => { document.title = tituloPrevio; window.onafterprint = null; };
 }
 
 async function compartirLink() {
