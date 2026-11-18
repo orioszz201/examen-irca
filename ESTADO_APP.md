@@ -64,6 +64,12 @@ HTML/CSS/JS vanilla (sin framework) · Supabase (Postgres + RPC) · GitHub Pages
 - [ ] **Supabase gratis pausa el proyecto tras ~1 semana de inactividad** → reanudar desde el dashboard (los datos se conservan).
 - [ ] Opcional: link único por alumno (token) para blindaje total.
 - [ ] Opcional: nota de corte (70%) configurable; hoy es fijo en el front.
+- [ ] Horas: renta 10% fija sin opción de desactivar/cambiar tasa (si no hay retención, el neto sale mal).
+- [ ] Horas: precio/hora es global y retroactivo (cambiarlo recalcula meses anteriores); falta guardar el precio por registro.
+- [ ] Horas: sin exportar/importar respaldo (solo localStorage del dispositivo; web y APK no comparten datos).
+- [ ] Horas: no se pueden editar registros (solo borrar).
+- [ ] En el APK, "Reporte / PDF" (`window.print()`) no funciona en el WebView de Android.
+- [ ] Publicar siempre a `master` (es la rama por defecto y la que usa GitHub Pages).
 
 ## Exámenes (fuera de la app)
 - V1 (original, 29 preg.) y V2 (22→15) en `/home/oscar/Escritorio/Irca/`
