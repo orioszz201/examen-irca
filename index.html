@@ -89,6 +89,10 @@
   .stat .t { font-size: .75rem; color: #56707e; }
   .pct-ok { color: var(--ok); font-weight: 700; }
   .pct-no { color: var(--bad); font-weight: 700; }
+  .tgl { color: var(--secondary); font-weight: 700; }
+  .fila-detalle td { background: #f7fafc; }
+  .detalle p { margin-bottom: 10px; font-size: .85rem; }
+  .detalle em { color: #667; }
   .linkbox { background: var(--light); border-radius: 8px; padding: 10px 12px; font-size: .9rem; word-break: break-all; margin: 10px 0; }
   @media print {
     header, footer, .panel-nav, .no-print { display: none !important; }
@@ -185,6 +189,9 @@
             <button class="btn ghost" onclick="mostrarPanel()">Actualizar</button>
           </div>
           <div class="stats" id="stats-panel"></div>
+          <div class="toolbar">
+            <button class="btn ghost" onclick="toggleTodosDetalles()">👁️ Mostrar / ocultar detalle</button>
+          </div>
           <div id="tabla-panel"></div>
           <div class="toolbar" style="margin-top:12px;">
             <button class="btn" onclick="exportarJSON()">Exportar JSON</button>
@@ -622,12 +629,13 @@ async function mostrarPanel() {
       '<div class="stat"><div class="n">' + total + '</div><div class="t">notas</div></div>' +
       '<div class="stat"><div class="n">' + prom + '%</div><div class="t">promedio</div></div>' +
       '<div class="stat"><div class="n">' + aprob + '</div><div class="t">aprobados (≥70)</div></div>';
-    let html = "<table><thead><tr><th>Nombre</th><th>Grupo</th><th>Examen</th><th>Nota</th><th>%</th><th>Fecha</th></tr></thead><tbody>";
-    ultimosResultados.forEach(d => {
+    let html = "<table><thead><tr><th></th><th>Nombre</th><th>Grupo</th><th>Examen</th><th>Nota</th><th>%</th><th>Fecha</th></tr></thead><tbody>";
+    ultimosResultados.forEach((d, i) => {
       const fecha = d.creado_en ? new Date(d.creado_en).toLocaleString("es-SV") : "";
       const nomEx = { "etapa1": "Etapa 1 · Refrigeración", "etapa2": "Etapa 2 · Aire Acondicionado" }[d.examen] || d.examen;
       const cls = (+d.pct || 0) >= 70 ? "pct-ok" : "pct-no";
-      html += "<tr><td>" + escaparHTML(d.nombre) + "</td><td>" + escaparHTML(d.grupo || "—") + "</td><td>" + escaparHTML(nomEx) + "</td><td>" + d.nota + "/" + d.total + "</td><td class=\"" + cls + "\">" + d.pct + "%</td><td>" + escaparHTML(fecha) + "</td></tr>";
+      html += "<tr onclick=\"toggleDetalle(" + i + ")\" style=\"cursor:pointer;\"><td class=\"tgl\" data-i=\"" + i + "\">▶</td><td>" + escaparHTML(d.nombre) + "</td><td>" + escaparHTML(d.grupo || "—") + "</td><td>" + escaparHTML(nomEx) + "</td><td>" + d.nota + "/" + d.total + "</td><td class=\"" + cls + "\">" + d.pct + "%</td><td>" + escaparHTML(fecha) + "</td></tr>";
+      html += "<tr class=\"fila-detalle hidden\" data-i=\"" + i + "\"><td colspan=\"7\">" + detalleResultado(d) + "</td></tr>";
     });
     html += "</tbody></table>";
     cont.innerHTML = html;
@@ -688,6 +696,44 @@ function exportarJSON() {
 
 function escaparHTML(s) {
   return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+}
+
+function detalleResultado(d) {
+  const ex = EXAMENES[d.examen];
+  if (!ex) return '<p class="muted">Sin detalle.</p>';
+  let resp = d.respuestas;
+  if (typeof resp === "string") { try { resp = JSON.parse(resp); } catch (e) { resp = []; } }
+  resp = resp || [];
+  let html = "<div class='detalle'>";
+  let qi = 0;
+  ex.preguntas.forEach((p, i) => {
+    if (p.abierta) return;
+    const v = resp[i];
+    const txt = (v === undefined || v === null || v === -1) ? "<em>sin responder</em>" : escaparHTML(p.opciones[v] || ("opción " + v));
+    html += "<p><strong>" + (++qi) + ".</strong> " + escaparHTML(p.q) + "<br>↳ " + txt + "</p>";
+  });
+  if (d.abierta) html += "<p><strong>✍️ Respuesta abierta:</strong><br>" + escaparHTML(d.abierta) + "</p>";
+  return html + "</div>";
+}
+
+function toggleDetalle(i) {
+  const fila = document.querySelector('.fila-detalle[data-i="' + i + '"]');
+  const marca = document.querySelector('.tgl[data-i="' + i + '"]');
+  if (!fila) return;
+  const abrir = fila.classList.contains("hidden");
+  fila.classList.toggle("hidden", !abrir);
+  if (marca) marca.textContent = abrir ? "▼" : "▶";
+}
+
+function toggleTodosDetalles() {
+  const filas = document.querySelectorAll(".fila-detalle");
+  const algunaCerrada = document.querySelector(".fila-detalle.hidden");
+  filas.forEach(f => {
+    const i = f.dataset.i;
+    f.classList.toggle("hidden", !algunaCerrada);
+    const marca = document.querySelector('.tgl[data-i="' + i + '"]');
+    if (marca) marca.textContent = algunaCerrada ? "▼" : "▶";
+  });
 }
 
 // ===================== HORAS CLASE =====================
