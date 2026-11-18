@@ -69,6 +69,30 @@
   th, td { padding: 9px 8px; text-align: left; border-bottom: 1px solid #e6edf1; }
   th { background: var(--light); color: var(--primary); font-weight: 700; }
   .toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .panel-shell { display: flex; gap: 16px; align-items: flex-start; }
+  .panel-nav { display: flex; flex-direction: column; gap: 8px; min-width: 180px; position: sticky; top: 12px; }
+  .panel-nav button {
+    text-align: left; background: #fff; color: var(--primary);
+    border: 1.5px solid #c7d6de; padding: 11px 14px; border-radius: 10px;
+    font-size: .92rem; font-weight: 700; cursor: pointer; font-family: inherit;
+  }
+  .panel-nav button.activo {
+    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    color: #fff; border-color: transparent;
+  }
+  .panel-body { flex: 1; min-width: 0; }
+  .stats { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+  .stat { flex: 1; min-width: 100px; background: var(--light); border-radius: 10px; padding: 10px 12px; text-align: center; }
+  .stat .n { font-size: 1.5rem; font-weight: 800; color: var(--primary); }
+  .stat .t { font-size: .75rem; color: #56707e; }
+  .pct-ok { color: var(--ok); font-weight: 700; }
+  .pct-no { color: var(--bad); font-weight: 700; }
+  .linkbox { background: var(--light); border-radius: 8px; padding: 10px 12px; font-size: .9rem; word-break: break-all; margin: 10px 0; }
+  @media (max-width: 700px) {
+    .panel-shell { flex-direction: column; }
+    .panel-nav { flex-direction: row; min-width: 0; width: 100%; overflow-x: auto; position: static; }
+    .panel-nav button { white-space: nowrap; }
+  }
   .hidden { display: none; }
   .muted { color: #667; font-size: .82rem; }
   footer {
@@ -135,24 +159,54 @@
   </div>
 
   <!-- PANEL -->
-  <div id="vista-panel" class="card hidden">
-    <h2>Panel de resultados (instructor)</h2>
-    <div class="toolbar">
-      <button class="btn" onclick="compartirLink()">📤 Compartir link</button>
-      <button class="btn ghost" onclick="verExamen()">👁️ Ver examen</button>
-      <button class="btn" onclick="exportarJSON()">Exportar JSON</button>
-      <button class="btn ghost" onclick="window.print()">Imprimir / PDF</button>
-      <button class="btn ghost" onclick="mostrarPanel()">Actualizar</button>
-      <button class="btn danger" onclick="vaciarResultados()">🗑️ Vaciar resultados</button>
+  <div id="vista-panel" class="hidden">
+    <div class="panel-shell">
+      <nav class="panel-nav">
+        <button data-sec="sec-resultados" class="activo" onclick="seccionPanel('sec-resultados')">📊 Resultados</button>
+        <button data-sec="sec-grupos" onclick="seccionPanel('sec-grupos')">👥 Grupos</button>
+        <button data-sec="sec-compartir" onclick="seccionPanel('sec-compartir')">📤 Compartir</button>
+        <button data-sec="sec-examenes" onclick="seccionPanel('sec-examenes')">📝 Exámenes</button>
+      </nav>
+      <div class="panel-body">
+        <section id="sec-resultados" class="card">
+          <h2>📊 Resultados</h2>
+          <div class="toolbar">
+            <label style="align-self:center; font-weight:600; font-size:.9rem;">Grupo:</label>
+            <select id="sel-filtro-grupo" onchange="mostrarPanel()" style="max-width:220px; padding:8px;"></select>
+            <button class="btn ghost" onclick="mostrarPanel()">Actualizar</button>
+          </div>
+          <div class="stats" id="stats-panel"></div>
+          <div id="tabla-panel"></div>
+          <div class="toolbar" style="margin-top:12px;">
+            <button class="btn" onclick="exportarJSON()">Exportar JSON</button>
+            <button class="btn ghost" onclick="window.print()">Imprimir / PDF</button>
+            <button class="btn danger" onclick="vaciarResultados()">🗑️ Vaciar resultados</button>
+          </div>
+        </section>
+        <section id="sec-grupos" class="card hidden">
+          <h2>👥 Grupos</h2>
+          <p class="muted">Cada grupo tiene su propio link y sus notas separadas. Quitar un grupo no borra sus notas ya guardadas.</p>
+          <div class="btnrow" style="margin-top:10px;">
+            <button class="btn ghost" onclick="agregarGrupo()">➕ Agregar grupo</button>
+            <button class="btn ghost" onclick="quitarGrupo()">➖ Quitar grupo</button>
+          </div>
+        </section>
+        <section id="sec-compartir" class="card hidden">
+          <h2>📤 Compartir con los alumnos</h2>
+          <p class="muted">Un mismo link para todos: cada alumno elige su grupo y escribe su nombre.</p>
+          <div class="linkbox">https://orioszz201.github.io/examen-irca/</div>
+          <button class="btn block" onclick="compartirLink()">📤 Compartir link</button>
+        </section>
+        <section id="sec-examenes" class="card hidden">
+          <h2>📝 Exámenes</h2>
+          <p class="muted">Entrá como alumno para ver el examen tal cual lo ve el grupo.</p>
+          <div class="btnrow" style="margin-top:10px;">
+            <button class="btn ghost" onclick="verExamen()">👁️ Ver examen</button>
+            <button class="btn ghost" onclick="volverInicio()">← Volver</button>
+          </div>
+        </section>
+      </div>
     </div>
-    <div class="toolbar">
-      <label style="align-self:center; font-weight:600; font-size:.9rem;">Grupo:</label>
-      <select id="sel-filtro-grupo" onchange="mostrarPanel()" style="max-width:220px; padding:8px;"></select>
-      <button class="btn ghost" onclick="agregarGrupo()">➕ Agregar grupo</button>
-      <button class="btn ghost" onclick="quitarGrupo()">➖ Quitar grupo</button>
-    </div>
-    <div id="tabla-panel"></div>
-    <div class="btnrow"><button class="btn ghost" onclick="volverInicio()">← Volver</button></div>
   </div>
 
 </div>
@@ -502,7 +556,9 @@ function verExamen() {
 async function mostrarPanel() {
   const cont = document.getElementById("tabla-panel");
   cont.innerHTML = '<p class="muted">Cargando…</p>';
+  document.getElementById("stats-panel").innerHTML = "";
   mostrar("vista-panel");
+  seccionPanel("sec-resultados");
   await cargarGrupos();
 
   const filtro = document.getElementById("sel-filtro-grupo").value;
@@ -517,18 +573,35 @@ async function mostrarPanel() {
 
   ultimosResultados = (data || []).filter(d => !filtro || d.grupo === filtro);
 
+  const stats = document.getElementById("stats-panel");
   if (!ultimosResultados.length) {
+    stats.innerHTML = "";
     cont.innerHTML = '<p class="muted">No hay resultados para este filtro.</p>';
   } else {
+    const total = ultimosResultados.length;
+    const prom = Math.round(ultimosResultados.reduce((a, d) => a + (+d.pct || 0), 0) / total);
+    const aprob = ultimosResultados.filter(d => (+d.pct || 0) >= 70).length;
+    stats.innerHTML =
+      '<div class="stat"><div class="n">' + total + '</div><div class="t">notas</div></div>' +
+      '<div class="stat"><div class="n">' + prom + '%</div><div class="t">promedio</div></div>' +
+      '<div class="stat"><div class="n">' + aprob + '</div><div class="t">aprobados (≥70)</div></div>';
     let html = "<table><thead><tr><th>Nombre</th><th>Grupo</th><th>Examen</th><th>Nota</th><th>%</th><th>Fecha</th></tr></thead><tbody>";
     ultimosResultados.forEach(d => {
       const fecha = d.creado_en ? new Date(d.creado_en).toLocaleString("es-SV") : "";
       const nomEx = { "etapa1": "Etapa 1 · Refrigeración", "etapa2": "Etapa 2 · Aire Acondicionado" }[d.examen] || d.examen;
-      html += "<tr><td>" + escaparHTML(d.nombre) + "</td><td>" + escaparHTML(d.grupo || "—") + "</td><td>" + escaparHTML(nomEx) + "</td><td>" + d.nota + "/" + d.total + "</td><td>" + d.pct + "%</td><td>" + escaparHTML(fecha) + "</td></tr>";
+      const cls = (+d.pct || 0) >= 70 ? "pct-ok" : "pct-no";
+      html += "<tr><td>" + escaparHTML(d.nombre) + "</td><td>" + escaparHTML(d.grupo || "—") + "</td><td>" + escaparHTML(nomEx) + "</td><td>" + d.nota + "/" + d.total + "</td><td class=\"" + cls + "\">" + d.pct + "%</td><td>" + escaparHTML(fecha) + "</td></tr>";
     });
     html += "</tbody></table>";
     cont.innerHTML = html;
   }
+}
+
+function seccionPanel(id) {
+  ["sec-resultados", "sec-grupos", "sec-compartir", "sec-examenes"].forEach(s =>
+    document.getElementById(s).classList.toggle("hidden", s !== id));
+  document.querySelectorAll(".panel-nav button").forEach(b =>
+    b.classList.toggle("activo", b.dataset.sec === id));
 }
 
 async function agregarGrupo() {
