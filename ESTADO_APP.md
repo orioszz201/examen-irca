@@ -1,5 +1,7 @@
 # RZ Pro Examen — Estado al 2026-11-18
 
+**Próxima sesión:** retomar los pendientes de ⏱️ Horas (renta configurable, precio por registro, respaldo JSON, editar registros, PDF en el APK) y las mejoras de resultados. Todo lo de v3.2 ya está publicado y probado en vivo.
+
 ## Novedad v3.2 (2026-11-18)
 Control de horas reorganizado:
 - **Grupo**: el detalle libre se reemplazó por un desplegable con los grupos de la sección 👥 Grupos; se guarda el nombre como texto y hay copia local (`rz_grupos_cache`) para cuando Supabase no responde. Registros viejos con "Detalle" se siguen mostrando.
